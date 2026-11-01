@@ -1,0 +1,58 @@
+# Bản tham khảo cho taskhub từ v2. Đặt ở gốc repo, THAY cho compose.yaml của v0.
+# Đây là file dùng để TRIỂN KHAI: kéo image đã được CI test + quét từ GHCR, không build.
+# Trên laptop, compose.override.yaml (tự gộp khi không dùng -f) thêm lại phần build.
+# Thay phuong-dev bằng user GitHub của bạn (chữ thường).
+
+name: taskhub
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: taskhub
+      POSTGRES_USER: taskhub
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "taskhub", "-d", "taskhub"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  taskhub:
+    # :? → thiếu biến thì Compose từ chối chạy, không âm thầm kéo một tag sai.
+    image: ghcr.io/phuong-dev/taskhub:${TASKHUB_IMAGE_TAG:?set TASKHUB_IMAGE_TAG in .env}
+    restart: unless-stopped
+    # Giới hạn RAM của container (cgroup). JVM trong image chạy với -XX:MaxRAMPercentage=75.0:
+    # có giới hạn → heap tối đa ≈ 75% của 768 MiB; KHÔNG có giới hạn → JVM tính theo toàn bộ
+    # 2 GiB của t3.small và có thể giành RAM của postgres + nginx → OOM killer (Module 06 bài 04).
+    mem_limit: 768m
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/taskhub
+      SPRING_DATASOURCE_USERNAME: taskhub
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 60s
+
+  nginx:
+    image: nginx:1.30-alpine
+    restart: unless-stopped
+    ports:
+      - "${NGINX_HOST_PORT:-8000}:80"   # laptop: 8000; EC2: deploy.sh đặt NGINX_HOST_PORT=80
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      taskhub:
+        condition: service_healthy
+
+volumes:
+  pgdata:

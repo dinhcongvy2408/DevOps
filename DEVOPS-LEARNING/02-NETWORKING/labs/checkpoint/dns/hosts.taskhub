@@ -1,0 +1,4 @@
+# Bản ghi DNS nội bộ cho miền taskhub.test (định dạng: IP  tên)
+# dnsmasq trả lời các tên này với TTL 300 giây.
+172.29.1.50   app.taskhub.test
+172.29.1.53   ns.taskhub.test

@@ -1,0 +1,17 @@
+# Bản tham khảo cho taskhub v3 — CHỈ dùng trên EC2. Đặt ở gốc repo.
+# deploy.sh tự gộp file này nếu có: docker compose -f compose.yaml -f compose.aws.yaml ...
+# Gửi log của container taskhub lên CloudWatch Logs bằng log driver awslogs.
+#
+# Điều kiện:
+#  - Log group /taskhub/dev/app đã được tạo trước (awslogs-create-group mặc định là false).
+#  - Instance role có logs:CreateLogStream + logs:PutLogEvents trên log group đó.
+#  - Docker daemon (chạy trên host) lấy quyền từ instance profile; container KHÔNG cần quyền AWS.
+
+services:
+  taskhub:
+    logging:
+      driver: awslogs
+      options:
+        awslogs-region: ap-southeast-1
+        awslogs-group: /taskhub/dev/app
+        # Không đặt awslogs-stream → mỗi container một stream, tên = container ID.

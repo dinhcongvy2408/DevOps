@@ -1,0 +1,18 @@
+# Ticket #7002 — Lần chạy "CI" TUẦN TRƯỚC trên nhánh main, sau khi squash merge PR #12
+# (lúc đó job thứ nhất còn tên "build", workflow còn hợp lệ).
+# PR #12 chạy CI XANH. Chỉ lần chạy trên main sau khi merge mới đỏ.
+# MINH HỌA: tên file tạm, thời gian, số dòng có thể khác.
+
+image
+  Build image
+    Run echo "Build cho commit: fix: chấp nhận tên báo cáo có dấu " (#12)"
+      echo "Build cho commit: fix: chấp nhận tên báo cáo có dấu " (#12)"
+      docker build -t reports:ci .
+      shell: /usr/bin/bash -e {0}
+    /home/runner/work/_temp/5b0e2c1d-8f4a-4b7e-9c51-0d6f3a2e9b17.sh: line 1: syntax error near unexpected token `('
+    Error: Process completed with exit code 2.
+
+  Scan image (Trivy)
+    (skipped)
+
+# Ghi chú của đồng nghiệp: "Lỗi lạ, chạy lại (Re-run) vẫn đỏ. Trên PR thì xanh. Chắc runner lỗi?"

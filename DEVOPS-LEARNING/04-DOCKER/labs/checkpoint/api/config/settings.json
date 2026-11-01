@@ -1,0 +1,4 @@
+{
+  "env": "staging",
+  "max_reports": 1000
+}

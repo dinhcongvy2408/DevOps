@@ -1,0 +1,240 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Break-fix AWS #1 (bf06) - small web server in its own VPC 10.99.0.0/16.
+  Lab use only. Delete the stack when done (see README, section Cleanup).
+
+# Đây là "hạ tầng do người khác dựng". Theo luật chơi, KHÔNG đọc file này
+# trước khi hoàn thành bài — hãy chẩn đoán bằng Console và AWS CLI.
+
+Parameters:
+  LatestAmiId:
+    Description: Ubuntu Server 24.04 LTS (amd64, gp3) from Canonical's public SSM parameter
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
+  InstanceType:
+    Description: Free-tier-eligible instance type
+    Type: String
+    Default: t3.micro
+    AllowedValues:
+      - t3.micro
+      - t3.small
+
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.99.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: bf06-vpc
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: bf06-igw
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+
+  WebSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.99.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: bf06-web-subnet
+
+  WebRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: bf06-web-rt
+
+  WebSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref WebSubnet
+      RouteTableId: !Ref WebRouteTable
+
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: bf06-web-sg
+      GroupDescription: bf06 web server
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          CidrIp: 0.0.0.0/0
+          Description: HTTP
+      Tags:
+        - Key: Name
+          Value: bf06-web-sg
+
+  WebNetworkAcl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: bf06-web-nacl
+
+  NaclInHttp:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref WebNetworkAcl
+      RuleNumber: 100
+      Protocol: 6
+      RuleAction: allow
+      Egress: false
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 80
+        To: 80
+
+  NaclInEphemeral:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref WebNetworkAcl
+      RuleNumber: 110
+      Protocol: 6
+      RuleAction: allow
+      Egress: false
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 1024
+        To: 65535
+
+  NaclOutHttp:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref WebNetworkAcl
+      RuleNumber: 100
+      Protocol: 6
+      RuleAction: allow
+      Egress: true
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 80
+        To: 80
+
+  NaclOutHttps:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref WebNetworkAcl
+      RuleNumber: 110
+      Protocol: 6
+      RuleAction: allow
+      Egress: true
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 443
+        To: 443
+
+  WebSubnetNetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref WebSubnet
+      NetworkAclId: !Ref WebNetworkAcl
+
+  Ec2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: bf06-ec2-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/CloudWatchAgentServerPolicy
+      Tags:
+        - Key: Name
+          Value: bf06-ec2-role
+
+  Ec2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: bf06-ec2-role
+      Roles:
+        - !Ref Ec2Role
+
+  WebInstance:
+    Type: AWS::EC2::Instance
+    # Chờ mạng của subnet sẵn sàng rồi mới khởi động máy
+    DependsOn:
+      - InternetGatewayAttachment
+      - WebSubnetRouteTableAssociation
+      - WebSubnetNetworkAclAssociation
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref WebSubnet
+      SecurityGroupIds:
+        - !Ref WebSecurityGroup
+      IamInstanceProfile: !Ref Ec2InstanceProfile
+      MetadataOptions:
+        HttpEndpoint: enabled
+        HttpTokens: required
+      Tags:
+        - Key: Name
+          Value: bf06-web
+      UserData: !Base64 |
+        #!/bin/bash
+        # Lưu script cài web vào đĩa (để chạy lại được), rồi chạy nó một lần.
+        mkdir -p /opt/bf06
+        cat > /opt/bf06/setup-web.sh <<'SCRIPT'
+        #!/bin/bash
+        set -euo pipefail
+        echo "[bf06] setup-web start: $(date -Is)"
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update
+        apt-get install -y nginx
+        mkdir -p /var/www/bf06
+        echo '<h1>bf06-ok</h1><p>taskhub status page</p>' > /var/www/bf06/index.html
+        cat > /etc/nginx/sites-available/bf06 <<'NGINX'
+        server {
+            listen 80 default_server;
+            server_name _;
+            root /var/www/bf06
+            index index.html;
+        }
+        NGINX
+        ln -sf /etc/nginx/sites-available/bf06 /etc/nginx/sites-enabled/bf06
+        rm -f /etc/nginx/sites-enabled/default
+        nginx -t
+        systemctl reload nginx
+        echo "[bf06] setup-web done: $(date -Is)"
+        SCRIPT
+        chmod 755 /opt/bf06/setup-web.sh
+        /opt/bf06/setup-web.sh
+
+Outputs:
+  InstanceId:
+    Value: !Ref WebInstance
+  PublicIp:
+    Description: Public IPv4 at creation time (changes after stop/start)
+    Value: !GetAtt WebInstance.PublicIp
+  VpcId:
+    Value: !Ref Vpc
+  SubnetId:
+    Value: !Ref WebSubnet
+  SecurityGroupId:
+    Value: !GetAtt WebSecurityGroup.GroupId
+  WebUrl:
+    Value: !Sub http://${WebInstance.PublicIp}/

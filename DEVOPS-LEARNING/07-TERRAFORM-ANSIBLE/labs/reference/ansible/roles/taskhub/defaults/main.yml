@@ -1,0 +1,16 @@
+# Giá trị mặc định của role taskhub (độ ưu tiên thấp nhất).
+
+taskhub_dir: /opt/taskhub
+
+# Gốc repo taskhub TRÊN MÁY ĐIỀU KHIỂN (laptop/WSL). playbook nằm ở infra/ansible/playbooks/
+# → đi lên 3 cấp là gốc repo. File lấy thẳng từ repo = một nguồn sự thật duy nhất:
+# sửa compose.yaml, merge PR, chạy lại playbook → máy chủ nhận đúng bản đó.
+taskhub_repo_root: "{{ playbook_dir }}/../../.."
+
+# File copy từ repo lên máy chủ (đường dẫn tương đối, giống nhau ở hai đầu).
+# Một trong các file này đổi → chạy lại deploy.sh. docker/nginx/default.conf có task riêng
+# (chỉ cần restart container nginx, không cần deploy lại).
+taskhub_files:
+  - { path: compose.yaml, mode: "0644" }
+  - { path: compose.aws.yaml, mode: "0644" }
+  - { path: scripts/deploy.sh, mode: "0755" }

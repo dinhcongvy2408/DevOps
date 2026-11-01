@@ -1,0 +1,46 @@
+# Bản tham khảo v5 — cấu hình Prometheus.
+# Kiểm tra cú pháp: docker run --rm -v "$PWD/monitoring/prometheus:/p:ro" --entrypoint promtool \
+#                     prom/prometheus:v3.15.1 check config /p/prometheus.yml
+
+global:
+  scrape_interval: 15s       # bao lâu kéo metric một lần
+  evaluation_interval: 15s   # bao lâu tính lại các rule cảnh báo
+  external_labels:
+    env: dev                 # gắn vào mọi alert gửi đi — biết alert đến từ môi trường nào
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  # Ứng dụng Spring Boot — gọi THẲNG taskhub:8080 trong network taskhub_default, không qua nginx.
+  - job_name: taskhub
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["taskhub:8080"]
+
+  # Máy chủ: CPU, RAM, disk, network + metric textfile (backup).
+  - job_name: node
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # Chính bộ giám sát — "ai giám sát người giám sát".
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: alertmanager
+    static_configs:
+      - targets: ["alertmanager:9093"]
+
+  - job_name: alloy
+    static_configs:
+      - targets: ["alloy:12345"]
+
+  - job_name: loki
+    static_configs:
+      - targets: ["loki:3100"]

@@ -1,0 +1,12 @@
+# Ticket #7001 — Pull Request #17 (nhánh feat/summary-max), tab Actions, workflow "CI"
+# MINH HỌA: chữ chính xác trên giao diện GitHub có thể khác; hãy tìm Ý CHÍNH.
+
+CI
+  feat: add max to summary #17
+  Invalid workflow file: .github/workflows/ci.yml#L1
+
+  The workflow is not valid. .github/workflows/ci.yml (Line: 40, Col: 12): Job 'image' depends on unknown job 'build'.
+
+# Trên trang Pull Request #17: phần "Checks" không có lần chạy nào của job "test" hay "image".
+# Branch protection của main yêu cầu check "test" và "image" → nút merge bị chặn,
+# hộp trạng thái hiện: "Expected — Waiting for status to be reported".

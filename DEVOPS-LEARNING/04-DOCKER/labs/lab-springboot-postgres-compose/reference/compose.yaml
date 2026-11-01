@@ -1,0 +1,57 @@
+# Bản tham khảo cho lab Spring Boot + PostgreSQL + Nginx — chỉ mở sau khi đã tự viết.
+# Đặt ở gốc repo taskhub. Chạy: docker compose up -d --build
+
+name: taskhub                       # tên project cố định -> volume luôn là taskhub_pgdata
+
+services:
+  postgres:
+    image: postgres:17              # bản 18 đổi thư mục dữ liệu, xem README module 04
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: taskhub
+      POSTGRES_USER: taskhub
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "taskhub", "-d", "taskhub"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # Không publish port: chỉ container trong cùng network mới kết nối được.
+    # Cần debug từ WSL? Thêm vào compose.override.yaml:  ports: ["127.0.0.1:5432:5432"]
+
+  taskhub:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: taskhub:local
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/taskhub
+      SPRING_DATASOURCE_USERNAME: taskhub
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy  # chờ PostgreSQL sẵn sàng, không chỉ "đã khởi động"
+    healthcheck:
+      # Image eclipse-temurin:21-jre-noble có sẵn curl. -f: HTTP >= 400 -> exit code khác 0.
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 60s
+
+  nginx:
+    image: nginx:1.30-alpine
+    restart: unless-stopped
+    ports:
+      - "${NGINX_HOST_PORT:-8000}:80"   # service DUY NHẤT publish ra máy host
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      taskhub:
+        condition: service_healthy
+
+volumes:
+  pgdata:

@@ -1,0 +1,40 @@
+# Checkpoint Module 02 — Phần B: môi trường để bạn viết cấu hình Nginx
+# Khởi động:  docker compose up -d
+# Áp dụng cấu hình: docker compose exec edge nginx -t && docker compose exec edge nginx -s reload
+# Dọn dẹp:    docker compose down -v
+
+name: netcp02b
+
+services:
+  # Reverse proxy — bạn viết cấu hình trong ./conf.d/default.conf
+  edge:
+    image: nginx:1.30-alpine
+    ports:
+      - "127.0.0.1:18081:80"
+    volumes:
+      - ./conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - api
+      - frontend
+
+  # Backend A — API, nghe port 8000
+  api:
+    image: python:3.12-slim
+    command: ["python", "/srv/server.py"]
+    environment:
+      APP_NAME: api-A
+      APP_PORT: "8000"
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ../apps:/srv:ro
+
+  # Backend B — frontend, nghe port 3000
+  frontend:
+    image: python:3.12-slim
+    command: ["python", "/srv/server.py"]
+    environment:
+      APP_NAME: frontend-B
+      APP_PORT: "3000"
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ../apps:/srv:ro

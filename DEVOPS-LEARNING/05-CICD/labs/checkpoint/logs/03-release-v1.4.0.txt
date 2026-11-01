@@ -1,0 +1,16 @@
+# Ticket #7003 — Đã chạy: git tag -a v1.4.0 -m "Release v1.4.0" && git push origin v1.4.0
+# (tag trỏ vào commit mới nhất của main; CI trên main cho commit đó đã xanh)
+# MINH HỌA: bố cục giao diện GitHub có thể khác.
+
+Release
+  v1.4.0
+  Triggered via push · phuong-dev pushed v1.4.0
+
+  Jobs
+    publish        ⊘ skipped        0s
+
+  Annotations
+    (không có)
+
+# Trang Packages của repo: không có phiên bản v1.4.0 nào của image "reports".
+# Không có job đỏ nào để đọc log — job "publish" không chạy một bước nào.

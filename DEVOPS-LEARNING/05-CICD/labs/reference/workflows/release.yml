@@ -1,0 +1,73 @@
+# Bản tham khảo cho dự án taskhub v1. Chép vào: .github/workflows/release.yml
+# Chỉ mở file này SAU KHI đã tự viết workflow của mình (Module 05, bài 03).
+#
+# Nguyên tắc "build một lần, triển khai nhiều nơi": release KHÔNG build lại image.
+# Nó tìm image mà CI đã build, quét và push cho đúng commit được tag (tag :<sha-7>),
+# rồi gắn thêm tag SemVer (ví dụ :v0.3.0) cho CHÍNH image đó.
+#
+# Điều kiện: chỉ tag commit đã nằm trên main VÀ workflow CI cho commit đó đã xanh.
+
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+
+# Không hủy giữa chừng một lần release.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: promote
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write   # tạo GitHub Release
+      packages: write   # gắn thêm tag cho image trên GHCR
+
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Giá trị từ context được đưa qua env, không nhúng thẳng ${{ }} vào script (bài 04).
+      - name: Promote image
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"   # tên image trên registry phải là chữ thường
+          image="ghcr.io/${owner}/taskhub"
+          sha="${GITHUB_SHA::7}"                 # cùng độ dài với type=sha của metadata-action
+
+          if ! docker buildx imagetools inspect "${image}:${sha}" > /dev/null 2>&1; then
+            echo "::error::Không tìm thấy ${image}:${sha}. Commit này đã nằm trên main và CI đã xanh chưa?"
+            exit 1
+          fi
+
+          # Nguồn là image index → imagetools tạo bản sao y hệt, không build lại.
+          docker buildx imagetools create --tag "${image}:${TAG}" "${image}:${sha}"
+          docker buildx imagetools inspect "${image}:${TAG}"
+
+      # Bản cuối, đã gồm lời giải bài tập 2 của bài 03: tag có phần tiền phát hành
+      # (v0.3.0-rc.1) phải thành pre-release, không được mang nhãn Latest.
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          flags=(--verify-tag --generate-notes)
+          if [[ "$TAG" == *-* ]]; then
+            flags+=(--prerelease --latest=false)
+          fi
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" "${flags[@]}"

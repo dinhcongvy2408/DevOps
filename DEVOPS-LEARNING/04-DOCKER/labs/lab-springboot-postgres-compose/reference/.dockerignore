@@ -1,0 +1,21 @@
+# Đặt ở GỐC REPO (cạnh compose.yaml) — build context là gốc repo.
+# Không gửi những thứ này vào build context.
+.git
+.github
+.idea
+.vscode
+**/*.iml
+**/target/
+**/*.log
+# Secret: tuyệt đối không để lọt vào image
+.env
+.env.*
+!.env.example
+# Không cần cho việc build image app
+docker/nginx/
+compose*.yaml
+docs/
+scripts/
+infra/
+monitoring/
+k8s/

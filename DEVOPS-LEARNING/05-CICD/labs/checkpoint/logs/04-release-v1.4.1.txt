@@ -1,0 +1,26 @@
+# Ticket #7004 — Đồng nghiệp đã "sửa tạm" ticket #7003 trên một nhánh thử nghiệm rồi tag v1.4.1.
+# Lần này job "publish" CÓ chạy và đỏ ở bước cuối.
+# MINH HỌA: số thứ tự bước BuildKit (#12…), thời gian và câu chữ chính xác của registry có thể khác.
+
+publish
+  Log in to GHCR
+    Logging into ghcr.io...
+    Login Succeeded!
+
+  Build image          ✔
+  Scan image (Trivy)   ✔   (Total: 0 (CRITICAL: 0))
+
+  Push image
+    ...
+    #12 exporting to image
+    #12 exporting layers done
+    #12 pushing layers
+    #12 pushing layers 0.4s done
+    #12 ERROR: failed to push ghcr.io/phuong-dev/reports:v1.4.1: denied: permission_denied: write_package
+    ------
+     > exporting to image:
+    ------
+    ERROR: failed to build: failed to solve: failed to push ghcr.io/phuong-dev/reports:v1.4.1: denied: permission_denied: write_package
+    Error: buildx failed with: ERROR: failed to build: failed to solve: failed to push ghcr.io/phuong-dev/reports:v1.4.1: denied: permission_denied: write_package
+
+# Ghi chú của đồng nghiệp: "Login Succeeded rồi mà vẫn denied?? Chắc phải tạo PAT rồi lưu vào secret."

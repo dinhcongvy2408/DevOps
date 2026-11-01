@@ -1,0 +1,13 @@
+# Bản tham khảo v5 — Grafana nạp mọi dashboard JSON trong /var/lib/grafana/dashboards.
+# Sửa dashboard: sửa file JSON trong Git rồi restart Grafana (allowUiUpdates: false — UI không ghi đè được).
+apiVersion: 1
+
+providers:
+  - name: taskhub
+    folder: taskhub
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards

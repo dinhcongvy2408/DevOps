@@ -1,0 +1,19 @@
+# Bản tham khảo cho taskhub v4. Đặt ở: infra/ansible/inventory/group_vars/all.yml
+# Áp dụng cho MỌI host trong inventory. Không đặt secret ở đây (file nằm trong Git).
+#
+# Vì sao nằm TRONG inventory/ chứ không cạnh ansible.cfg?
+# Ansible chỉ tìm group_vars/ ở thư mục chứa nguồn inventory (inventory/aws_ec2.yml → inventory/)
+# hoặc ở thư mục chứa playbook. Đặt ở đây thì cả `ansible` (ad-hoc), `ansible-inventory`
+# lẫn `ansible-playbook` đều thấy các biến kết nối dưới đây.
+
+# --- Kết nối qua AWS Systems Manager (không SSH, không port 22) ---
+ansible_connection: amazon.aws.aws_ssm
+ansible_aws_ssm_region: ap-southeast-1      # mặc định của plugin là us-east-1 → phải đặt
+# ansible_aws_ssm_bucket_name được tính trong aws_ec2.yml (compose) theo account id.
+# Profile: plugin đọc biến môi trường AWS_PROFILE (export AWS_PROFILE=taskhub).
+# aws_ssm KHÔNG dùng ansible_user; muốn chạy bằng root thì dùng become (đặt trong playbook).
+
+# --- Ứng dụng ---
+# (taskhub_dir, taskhub_repo_root có giá trị mặc định trong roles/taskhub/defaults/main.yml)
+# Tag image GHCR cần triển khai — bắt buộc truyền khi chạy:  -e taskhub_image_tag=v0.6.0
+# (hoặc tag SHA 7 ký tự do CI push). Cố ý KHÔNG đặt mặc định để không lỡ tay deploy nhầm bản.

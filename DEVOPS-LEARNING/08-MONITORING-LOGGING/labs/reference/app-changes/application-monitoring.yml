@@ -1,0 +1,25 @@
+# Gộp các khối dưới đây vào app/src/main/resources/application.yml (v5).
+# Tên thuộc tính đã kiểm chứng với Spring Boot 4.1.2 (docs.spring.io, 2026-10-31) và chạy thật.
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Thêm "prometheus". KHÔNG dùng "*" — env, heapdump, configprops... lộ thông tin nhạy cảm.
+        include: health,info,prometheus
+  metrics:
+    tags:
+      # Gắn nhãn application="taskhub" cho MỌI metric — lọc dễ khi có nhiều app cùng một Prometheus.
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        # Xuất histogram (các bucket _bucket) cho thời gian xử lý request
+        # → Prometheus tính được p95/p99 bằng histogram_quantile(). Không bật thì chỉ có _count và _sum.
+        http.server.requests: true
+
+logging:
+  structured:
+    format:
+      # Log ra stdout dạng JSON theo Elastic Common Schema: mỗi dòng một object, có trường "log.level".
+      # Alloy đọc trường này thành nhãn level trong Loki. Bỏ dòng này nếu muốn quay lại log dạng chữ.
+      console: ecs

@@ -1,0 +1,11 @@
+<!--
+  Thêm vào khối <dependencies> của app/pom.xml (cạnh spring-boot-starter-actuator).
+  Không ghi <version>: Spring Boot quản lý phiên bản Micrometer (spring-boot-starter-parent).
+  Có thư viện này + đã có actuator → Spring Boot tự bật endpoint /actuator/prometheus
+  (vẫn phải "expose" nó qua HTTP trong application.yml — xem application-monitoring.yml).
+-->
+<dependency>
+    <groupId>io.micrometer</groupId>
+    <artifactId>micrometer-registry-prometheus</artifactId>
+    <scope>runtime</scope>
+</dependency>

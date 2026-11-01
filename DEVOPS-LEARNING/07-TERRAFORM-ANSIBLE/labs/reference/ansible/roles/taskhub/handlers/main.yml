@@ -1,0 +1,14 @@
+# Handler của role taskhub — chạy MỘT lần ở cuối play, chỉ khi được notify.
+
+# Vì sao RESTART chứ không `nginx -s reload`?
+# compose.yaml gắn default.conf bằng bind mount MỘT FILE. Module copy ghi file mới rồi đổi tên
+# (thay inode) → container vẫn nhìn thấy file CŨ; reload chỉ đọc lại file cũ.
+# Restart container làm Docker gắn lại đường dẫn → thấy file mới. Gián đoạn vài giây.
+- name: Restart nginx container
+  ansible.builtin.shell:
+    cmd: >-
+      cid="$(docker ps -q
+      --filter label=com.docker.compose.project=taskhub
+      --filter label=com.docker.compose.service=nginx)";
+      if [ -n "$cid" ]; then docker restart "$cid"; fi
+  changed_when: true   # handler chỉ chạy khi có thay đổi → restart luôn là "changed" (ansible-lint: no-changed-when)

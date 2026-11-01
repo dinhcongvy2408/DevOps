@@ -1,0 +1,6 @@
+# Giá trị mặc định của role docker (độ ưu tiên THẤP NHẤT — mọi nơi khác đều ghi đè được).
+
+# Fact `architecture` của Ansible (x86_64, aarch64) → tên kiến trúc của apt (amd64, arm64)
+docker_apt_arch:
+  x86_64: amd64
+  aarch64: arm64

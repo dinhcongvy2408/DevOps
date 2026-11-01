@@ -1,0 +1,34 @@
+# Bản tham khảo cho taskhub v4. Đặt ở: infra/ansible/inventory/aws_ec2.yml
+# Tên file BẮT BUỘC kết thúc bằng aws_ec2.yml (hoặc aws_ec2.yaml) — plugin chỉ nhận file như vậy.
+# Xem kết quả: ansible-inventory --graph   |   ansible-inventory --host <tên-host>
+# Credential: lấy từ AWS_PROFILE=taskhub (aws login) — KHÔNG ghi access key vào đây.
+
+plugin: amazon.aws.aws_ec2
+regions:
+  - ap-southeast-1
+
+# Chỉ lấy máy của dự án và ĐANG CHẠY.
+# Không ghi instance-state-name thì plugin mặc định lấy cả máy stopped → playbook treo khi kết nối.
+filters:
+  tag:Project: taskhub
+  instance-state-name: running
+
+# Tên host hiển thị = tag Name (dễ đọc hơn i-0abc...)
+hostnames:
+  - tag:Name
+
+# Biến tag mới là ec2_tags; tắt biến cũ `tags` (đã deprecated, trùng tên từ khóa của Ansible)
+use_deprecated_tags: false
+
+# Tạo nhóm từ tag: Env=dev → nhóm env_dev (tag do default_tags của Terraform gắn).
+# Sau này có Env=prod → tự có nhóm env_prod, playbook chọn môi trường bằng `hosts:` hoặc --limit.
+keyed_groups:
+  - key: ec2_tags.Env
+    prefix: env
+
+# Biến kết nối tính cho từng host. Giá trị là biểu thức Jinja2 (chuỗi cố định phải đặt trong nháy đơn).
+compose:
+  # aws_ssm kết nối bằng INSTANCE ID, không phải IP/DNS → ansible_host phải là instance_id
+  ansible_host: instance_id
+  # Bucket trung chuyển file của aws_ssm, tên theo account id (owner_id = account sở hữu instance)
+  ansible_aws_ssm_bucket_name: "'taskhub-ansible-ssm-' ~ owner_id"

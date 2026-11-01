@@ -1,0 +1,159 @@
+# Bản tham khảo cho dự án taskhub v1. Chép vào: .github/workflows/ci.yml
+# Chỉ mở file này SAU KHI đã tự viết workflow của mình (Module 05, bài 02–04).
+#
+# Luồng:
+#   pull_request vào main: build-test → image (build + quét, KHÔNG push)
+#   push vào main (sau khi merge PR): build-test → image (build + quét + push tag SHA lên GHCR)
+#
+# Mọi action được ghim (pin) bằng SHA commit đầy đủ, có ghi chú phiên bản phía sau (bài 04).
+# SHA lấy bằng: git ls-remote https://github.com/<owner>/<repo> 'refs/tags/<tag>' 'refs/tags/<tag>^{}'
+# (kiểm tra ngày 2026-10-31). Dependabot (.github/dependabot.yml) tự mở PR khi có bản mới.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Quyền mặc định của GITHUB_TOKEN cho mọi job: chỉ đọc code.
+# Job nào cần thêm quyền thì tự khai báo (nguyên tắc quyền tối thiểu).
+permissions:
+  contents: read
+
+# Push commit mới lên cùng một PR → hủy lần chạy cũ đang dở.
+# Trên main thì không hủy: mỗi commit của main đều phải có image riêng.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-test:
+    name: build-test
+    runs-on: ubuntu-24.04   # ghim phiên bản: ubuntu-latest đang chuyển sang 26.04 (10–11/2026)
+    timeout-minutes: 15
+
+    # PostgreSQL tạm cho test @SpringBootTest. Mật khẩu này chỉ sống trong runner
+    # dùng một lần, không bảo vệ dữ liệu thật nào → không cần là secret.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: taskhub
+          POSTGRES_USER: taskhub
+          POSTGRES_PASSWORD: ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U taskhub -d taskhub"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/taskhub
+      SPRING_DATASOURCE_USERNAME: taskhub
+      SPRING_DATASOURCE_PASSWORD: ci-only-password
+
+    # working-directory chỉ áp dụng cho bước `run:`, KHÔNG áp dụng cho bước `uses:`.
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false   # không để lại token trong .git/config
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven   # khóa cache = hash của **/pom.xml và **/.mvn/wrapper/maven-wrapper.properties
+
+      - name: Build and test
+        run: ./mvnw -B -ntp verify
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-reports
+          path: app/target/surefire-reports/   # bước `uses:` → đường dẫn tính từ gốc repo
+          retention-days: 7
+
+  image:
+    name: image
+    needs: build-test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write   # chỉ các bước có `if: github.event_name == 'push'` thật sự dùng tới
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # Sinh tên + tag + label OCI. metadata-action tự chuyển tên image về chữ thường.
+      # type=sha,prefix= → tag là 7 ký tự đầu của SHA commit (ví dụ :9f8e7d6), không có tiền tố "sha-".
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/taskhub
+          tags: |
+            type=sha,prefix=
+          flavor: |
+            latest=false
+
+      # Build và nạp image vào Docker của runner để quét. Chưa push.
+      - name: Build image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          load: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Cổng chặn: có lỗ hổng CRITICAL đã có bản vá → job đỏ → image không được push.
+      - name: Scan image (Trivy)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          # outputs.tags là danh sách nhiều dòng; lấy phần tử đầu từ output JSON cho chắc chắn
+          image-ref: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}
+          format: table
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: Log in to GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Cùng builder, cùng input, cùng label → lấy toàn bộ từ cache → đúng image vừa quét.
+      - name: Push image
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha

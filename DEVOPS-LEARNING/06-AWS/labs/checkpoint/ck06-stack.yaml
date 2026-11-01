@@ -1,0 +1,253 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Checkpoint GD6 part C (ck06) - small web server in its own VPC 10.98.0.0/16.
+  Lab use only. Delete the stack when done (see checkpoint.md, part C).
+
+# Theo luật của checkpoint, KHÔNG đọc file này trước khi nộp bài.
+
+Parameters:
+  LatestAmiId:
+    Description: Ubuntu Server 24.04 LTS (amd64, gp3) from Canonical's public SSM parameter
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
+  InstanceType:
+    Description: Free-tier-eligible instance type
+    Type: String
+    Default: t3.micro
+    AllowedValues:
+      - t3.micro
+      - t3.small
+
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.98.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: ck06-vpc
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: ck06-igw
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+
+  WebSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.98.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: ck06-web-subnet
+
+  WebRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: ck06-web-rt
+
+  WebDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref WebRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  WebSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref WebSubnet
+      RouteTableId: !Ref WebRouteTable
+
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: ck06-alb-sg
+      GroupDescription: reserved for a future load balancer
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: ck06-alb-sg
+
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: ck06-web-sg
+      GroupDescription: ck06 web server (hardened)
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !GetAtt LoadBalancerSecurityGroup.GroupId
+          Description: HTTP
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: package updates
+      Tags:
+        - Key: Name
+          Value: ck06-web-sg
+
+  WebNetworkAcl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: ck06-web-nacl
+
+  NaclInBlockScanners:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref WebNetworkAcl
+      RuleNumber: 90
+      Protocol: 6
+      RuleAction: deny
+      Egress: false
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 1
+        To: 1023
+
+  NaclInHttp:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref WebNetworkAcl
+      RuleNumber: 100
+      Protocol: 6
+      RuleAction: allow
+      Egress: false
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 80
+        To: 80
+
+  NaclInEphemeral:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref WebNetworkAcl
+      RuleNumber: 110
+      Protocol: 6
+      RuleAction: allow
+      Egress: false
+      CidrBlock: 0.0.0.0/0
+      PortRange:
+        From: 1024
+        To: 65535
+
+  NaclOutAll:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref WebNetworkAcl
+      RuleNumber: 100
+      Protocol: -1
+      RuleAction: allow
+      Egress: true
+      CidrBlock: 0.0.0.0/0
+
+  WebSubnetNetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref WebSubnet
+      NetworkAclId: !Ref WebNetworkAcl
+
+  Ec2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ck06-ec2-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Tags:
+        - Key: Name
+          Value: ck06-ec2-role
+
+  Ec2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: ck06-ec2-role
+      Roles:
+        - !Ref Ec2Role
+
+  WebInstance:
+    Type: AWS::EC2::Instance
+    DependsOn:
+      - WebDefaultRoute
+      - WebSubnetRouteTableAssociation
+      - WebSubnetNetworkAclAssociation
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref WebSubnet
+      SecurityGroupIds:
+        - !Ref WebSecurityGroup
+      IamInstanceProfile: !Ref Ec2InstanceProfile
+      MetadataOptions:
+        HttpEndpoint: enabled
+        HttpTokens: required
+      Tags:
+        - Key: Name
+          Value: ck06-web
+      UserData: !Base64 |
+        #!/bin/bash
+        set -euo pipefail
+        echo "[ck06] setup start: $(date -Is)"
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update
+        apt-get install -y nginx
+        mkdir -p /var/www/ck06
+        echo '<h1>ck06-ok</h1><p>reports status page</p>' > /var/www/ck06/index.html
+        cat > /etc/nginx/sites-available/ck06 <<'NGINX'
+        server {
+            # Chỉ nghe nội bộ — "an toàn hơn"
+            listen 127.0.0.1:80 default_server;
+            server_name _;
+            root /var/www/ck06;
+            index index.html;
+        }
+        NGINX
+        ln -sf /etc/nginx/sites-available/ck06 /etc/nginx/sites-enabled/ck06
+        rm -f /etc/nginx/sites-enabled/default
+        nginx -t
+        systemctl reload nginx
+        echo "[ck06] setup done: $(date -Is)"
+
+Outputs:
+  InstanceId:
+    Value: !Ref WebInstance
+  PublicIp:
+    Description: Public IPv4 at creation time (changes after stop/start)
+    Value: !GetAtt WebInstance.PublicIp
+  VpcId:
+    Value: !Ref Vpc
+  SubnetId:
+    Value: !Ref WebSubnet
+  SecurityGroupId:
+    Value: !GetAtt WebSecurityGroup.GroupId
+  WebUrl:
+    Value: !Sub http://${WebInstance.PublicIp}/

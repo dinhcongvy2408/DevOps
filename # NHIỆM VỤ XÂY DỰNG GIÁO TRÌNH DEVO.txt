@@ -1,0 +1,507 @@
+# NHIỆM VỤ: XÂY DỰNG GIÁO TRÌNH DEVOPS & CLOUD ENGINEER TỪ NỀN TẢNG ĐẾN ĐI LÀM
+
+## 1. Vai trò của bạn
+
+Bạn đóng vai trò là một đội ngũ chuyên gia gồm:
+
+- Senior DevOps Engineer.
+- Senior Cloud Engineer (AWS).
+- System Engineer / Linux Administrator.
+- Site Reliability Engineer (SRE).
+- Technical Mentor có kinh nghiệm đào tạo Junior DevOps Engineer.
+
+Nhiệm vụ của bạn là nghiên cứu, tuyển chọn, kiểm chứng và biên soạn một bộ giáo trình DevOps hoàn chỉnh dành riêng cho tôi.
+
+Tôi không cần một danh sách hàng trăm đường link. Tôi cần một chương trình học có hệ thống, trong đó bạn phải tìm ra những kiến thức quan trọng nhất, giải thích chúng một cách dễ hiểu, kết nối chúng với nhau và biến chúng thành tài liệu học tập có thể sử dụng lâu dài.
+
+## 2. Thông tin người học
+
+Hãy sử dụng những thông tin sau để thiết kế giáo trình:
+
+- Tôi đã học và làm quen với lập trình, đặc biệt là Java.
+- Java: cơ bản.
+- SQL và Database: cơ bản.
+- Spring Boot: mới bắt đầu.
+- Git/GitHub: đã từng sử dụng.
+- Linux: có sử dụng Ubuntu thông qua WSL nhưng kiến thức quản trị hệ thống chưa vững.
+- Docker: đã cài đặt và có tiếp xúc nhưng chưa thực sự thành thạo.
+- AWS: chưa có nền tảng thực hành vững.
+- Networking: cần học lại từ nền tảng.
+- Khả năng tự đọc log, phân tích lỗi và debug còn yếu.
+- Tôi không muốn chỉ biết sử dụng AI để tạo lệnh hoặc viết cấu hình. Tôi muốn hiểu bản chất và có khả năng tự xử lý vấn đề.
+
+Môi trường hiện tại:
+
+- Windows 11.
+- Laptop Lenovo Legion 5.
+- WSL Ubuntu 22.04.
+- Docker Desktop.
+- IntelliJ IDEA.
+- Java 21.
+- Có thể sử dụng VS Code, Terminal và Git.
+
+Thời gian học:
+
+- 15–18 giờ mỗi tuần.
+- Mục tiêu trước mắt: có khả năng ứng tuyển Junior DevOps / Cloud Engineer trong 3–6 tháng.
+- Mục tiêu lâu dài: phát triển lên DevOps Engineer, Cloud Engineer, SRE hoặc DevSecOps.
+- Tôi muốn có khả năng làm việc thực tế, không chỉ học để lấy chứng chỉ.
+
+## 3. Nhiệm vụ nghiên cứu tài liệu
+
+Hãy nghiên cứu tài liệu từ nhiều nguồn đáng tin cậy, ưu tiên theo thứ tự:
+
+1. Tài liệu chính thức của nhà phát triển và nhà cung cấp công nghệ.
+2. Các khóa học và bài giảng miễn phí chất lượng cao.
+3. Các kênh YouTube chuyên sâu có nội dung thực hành.
+4. GitHub repositories có bài lab, ví dụ và dự án thực tế.
+5. Blog kỹ thuật của các kỹ sư có kinh nghiệm.
+6. Tài liệu cộng đồng có chất lượng và được kiểm chứng.
+
+Các nguồn cần ưu tiên:
+
+- Linux Documentation, Ubuntu Documentation.
+- Red Hat Documentation.
+- Cisco Networking Resources.
+- Docker Documentation.
+- Kubernetes Documentation.
+- AWS Documentation và AWS Skill Builder.
+- Git Documentation.
+- GitHub Actions Documentation.
+- Jenkins Documentation.
+- Terraform Documentation.
+- Ansible Documentation.
+- Nginx Documentation.
+- Prometheus và Grafana Documentation.
+- Elastic Documentation.
+- Roadmap.sh.
+- freeCodeCamp.
+- TechWorld with Nana.
+- NetworkChuck.
+- Các nguồn chất lượng tương đương nếu tìm được.
+
+Không giới hạn ở danh sách trên. Hãy tìm thêm nguồn tốt nếu thực sự cần thiết.
+
+### Nguyên tắc tuyển chọn
+
+Với mỗi chủ đề:
+
+- Chọn một nguồn chính để học.
+- Chọn tối đa 1–3 nguồn bổ sung thực sự hữu ích.
+- Ưu tiên nội dung miễn phí.
+- Ưu tiên tài liệu có bài thực hành.
+- Ghi rõ tài liệu dành cho người mới hay người đã có nền tảng.
+- Ghi rõ ngôn ngữ: tiếng Việt hoặc tiếng Anh.
+- Ghi rõ nội dung nào đã cũ, phiên bản nào cần chú ý.
+- Kiểm tra đường dẫn trước khi đưa vào giáo trình.
+- Không tự bịa tên khóa học, video, đường link hoặc nội dung tài liệu.
+- Không đưa tài liệu chỉ vì nó nổi tiếng.
+
+Tôi cần chất lượng hơn số lượng.
+
+## 4. Xây dựng chương trình học
+
+Hãy thiết kế lộ trình từ cơ bản đến có thể đi làm, chia thành các giai đoạn.
+
+### Giai đoạn 1: Linux và System Administration
+
+Cần học:
+
+- Linux architecture và filesystem.
+- Các lệnh Linux quan trọng.
+- File permissions, ownership.
+- Users và groups.
+- Process management.
+- Services và systemd.
+- Package management.
+- SSH.
+- Bash scripting.
+- Environment variables.
+- Logs và troubleshooting.
+- Disk, memory, CPU và network monitoring.
+- Cron và task scheduling.
+
+### Giai đoạn 2: Networking Fundamentals
+
+Cần học:
+
+- OSI Model và TCP/IP.
+- IPv4, subnet mask, CIDR.
+- Public IP và Private IP.
+- DNS.
+- DHCP.
+- NAT.
+- Routing và switching ở mức nền tảng.
+- TCP và UDP.
+- HTTP và HTTPS.
+- SSL/TLS.
+- Ports và firewalls.
+- SSH.
+- Load Balancing.
+- Reverse Proxy.
+- Các lệnh ping, traceroute, nslookup, dig, curl, netstat, ss, tcpdump.
+
+Phải giải thích rõ những kiến thức mạng nào một DevOps Engineer cần biết và mức độ hiểu đến đâu là đủ.
+
+### Giai đoạn 3: Git và Software Development Workflow
+
+Cần học:
+
+- Git fundamentals.
+- Branching và merging.
+- Pull Request.
+- Merge conflict.
+- GitHub.
+- Repository management.
+- Git workflow trong đội nhóm.
+- Code review.
+- Git tags và releases.
+
+### Giai đoạn 4: Docker và Container
+
+Cần học:
+
+- Virtual Machine và Container khác nhau thế nào.
+- Container architecture.
+- Images và Containers.
+- Dockerfile.
+- Docker Compose.
+- Volumes.
+- Networks.
+- Environment variables.
+- Container registry.
+- Multi-stage build.
+- Docker security.
+- Troubleshooting container.
+
+Phải có bài lab triển khai Spring Boot + PostgreSQL bằng Docker Compose.
+
+### Giai đoạn 5: CI/CD
+
+Cần học:
+
+- CI và CD là gì.
+- Build, Test, Package, Deploy.
+- Pipeline.
+- GitHub Actions.
+- Jenkins.
+- GitLab CI ở mức nhận biết.
+- Artifact và Container Registry.
+- Deployment strategies.
+- Rollback.
+- Environment management.
+- Secrets management.
+
+Không yêu cầu học tất cả công cụ cùng lúc. Hãy chọn một công cụ chính để thực hành chuyên sâu và giải thích lý do.
+
+### Giai đoạn 6: AWS Cloud
+
+Đây là phần rất quan trọng.
+
+Cần học:
+
+- Cloud Computing fundamentals.
+- AWS Global Infrastructure.
+- IAM.
+- EC2.
+- VPC.
+- Subnet.
+- Route Table.
+- Internet Gateway.
+- NAT Gateway.
+- Security Group.
+- Network ACL.
+- S3.
+- RDS.
+- Load Balancer.
+- Auto Scaling.
+- Route 53.
+- CloudWatch.
+- AWS CLI.
+- AWS Cost Management.
+- AWS Shared Responsibility Model.
+
+Phải giúp tôi hiểu được cách các dịch vụ kết nối với nhau để tạo thành một hệ thống thực tế.
+
+Không chỉ liệt kê định nghĩa từng dịch vụ.
+
+### Giai đoạn 7: Infrastructure as Code
+
+Cần học:
+
+- Infrastructure as Code là gì.
+- Terraform.
+- Provider.
+- Resource.
+- Variable.
+- Output.
+- State.
+- Module.
+- Remote Backend.
+- Terraform workflow.
+- Ansible fundamentals.
+
+Chọn Terraform làm công cụ chính.
+
+### Giai đoạn 8: Monitoring, Logging và Observability
+
+Cần học:
+
+- Monitoring.
+- Logging.
+- Metrics.
+- Tracing.
+- Prometheus.
+- Grafana.
+- ELK Stack hoặc OpenSearch.
+- Alerting.
+- Application monitoring.
+- Infrastructure monitoring.
+- Troubleshooting và incident response.
+
+Giải thích sự khác biệt giữa Monitoring, Logging và Observability.
+
+### Giai đoạn 9: Kubernetes
+
+Chỉ đưa Kubernetes vào sau khi tôi đã nắm được Docker, Linux, Networking và CI/CD.
+
+Cần học:
+
+- Kubernetes architecture.
+- Control Plane và Worker Node.
+- Pod.
+- Deployment.
+- ReplicaSet.
+- Service.
+- ConfigMap.
+- Secret.
+- Namespace.
+- Ingress.
+- Persistent Volume.
+- Helm.
+- kubectl.
+- Troubleshooting Kubernetes.
+
+Phân biệt rõ kiến thức Kubernetes cần cho Junior và kiến thức chuyên sâu có thể học sau.
+
+### Giai đoạn 10: Security và DevSecOps
+
+Cần học:
+
+- Linux security.
+- SSH security.
+- IAM và least privilege.
+- Secrets management.
+- Network security.
+- Container security.
+- Dependency scanning.
+- Image scanning.
+- Basic vulnerability management.
+- Security trong CI/CD.
+- AWS security fundamentals.
+
+### Giai đoạn 11: VMware, Hybrid Cloud và On-Premises
+
+Giải thích:
+
+- On-Premises.
+- Virtualization.
+- VMware.
+- Hybrid Cloud.
+- Cloud và Data Center.
+- Khi nào doanh nghiệp sử dụng các mô hình này.
+- DevOps Engineer cần biết đến mức nào.
+
+Không dành quá nhiều thời gian cho phần này nếu không cần thiết để ứng tuyển Junior.
+
+## 5. Phương pháp biên soạn tài liệu
+
+Đây là yêu cầu quan trọng nhất.
+
+Không được viết giáo trình theo kiểu từ điển thuật ngữ hoặc chép lại tài liệu trên mạng.
+
+Mỗi bài học phải có cấu trúc:
+
+1. Mục tiêu bài học.
+2. Tại sao DevOps Engineer cần kiến thức này?
+3. Kiến thức nền tảng cần hiểu.
+4. Giải thích chi tiết từ dễ đến khó.
+5. Ví dụ thực tế.
+6. Sơ đồ kiến trúc hoặc luồng hoạt động khi cần thiết.
+7. Các câu lệnh cần biết.
+8. Giải thích từng câu lệnh và tham số quan trọng.
+9. Bài thực hành từng bước.
+10. Kết quả mong đợi.
+11. Các lỗi thường gặp.
+12. Hướng dẫn đọc log và xử lý lỗi.
+13. Câu hỏi kiểm tra kiến thức.
+14. Bài tập tự làm không có lời giải ngay.
+15. Tiêu chí đánh giá đã thực sự hiểu bài hay chưa.
+
+Đặc biệt:
+
+- Giải thích bản chất trước khi hướng dẫn thao tác.
+- Không giả định tôi đã biết những kiến thức chưa học.
+- Khi xuất hiện thuật ngữ tiếng Anh, phải có nghĩa tiếng Việt và giải thích dễ hiểu.
+- Không viết quá ngắn đến mức người mới không thể tự học.
+- Không viết quá dài nhưng lặp lại kiến thức.
+- Cần phân biệt kiến thức bắt buộc, kiến thức nên biết và kiến thức nâng cao.
+- Các lệnh cần có ví dụ đầu vào, đầu ra và giải thích.
+- Các bài lab phải thực sự chạy được trong môi trường của tôi.
+
+## 6. Xây dựng dự án thực tế xuyên suốt
+
+Hãy thiết kế một dự án xuyên suốt giáo trình:
+
+**Triển khai một hệ thống Web Java Spring Boot + PostgreSQL lên AWS bằng quy trình DevOps.**
+
+Yêu cầu:
+
+1. Quản lý source code bằng GitHub.
+2. Đóng gói ứng dụng bằng Docker.
+3. Chạy ứng dụng và PostgreSQL bằng Docker Compose.
+4. Cấu hình Nginx làm Reverse Proxy.
+5. Thiết lập môi trường AWS.
+6. Triển khai lên EC2.
+7. Cấu hình VPC, Security Group và IAM phù hợp.
+8. Thiết lập CI/CD tự động.
+9. Sử dụng Terraform để quản lý hạ tầng.
+10. Thiết lập Logging và Monitoring.
+11. Có quy trình backup và restore database.
+12. Có quy trình rollback khi deployment lỗi.
+13. Thiết lập bảo mật cơ bản.
+14. Viết README hướng dẫn triển khai.
+15. Có sơ đồ kiến trúc hệ thống.
+
+Mỗi giai đoạn học phải đóng góp một phần vào dự án này.
+
+Cuối chương trình, tôi phải có một dự án đủ tốt để đưa vào CV và giải thích được trong buổi phỏng vấn.
+
+Hãy kiểm soát chi phí AWS. Ưu tiên tài nguyên miễn phí hoặc chi phí thấp, hướng dẫn cách kiểm tra và xóa tài nguyên để tránh phát sinh phí ngoài ý muốn.
+
+## 7. Xây dựng kế hoạch học tập
+
+Tôi có 15–18 giờ mỗi tuần.
+
+Hãy thiết kế:
+
+- Lộ trình 3 tháng: nền tảng và khả năng triển khai cơ bản.
+- Lộ trình 6 tháng: hoàn thiện kỹ năng Junior DevOps / Cloud Engineer.
+- Phân bổ giờ học theo tuần.
+- Mục tiêu đầu ra cho từng tuần.
+- Bài lab bắt buộc.
+- Dự án phải hoàn thành ở từng giai đoạn.
+- Kiến thức cần ôn tập.
+- Các bài kiểm tra định kỳ.
+
+Không cố nhồi nhét quá nhiều công nghệ trong thời gian ngắn.
+
+Hãy ưu tiên kiến thức thực sự cần thiết để có thể đi làm trước.
+
+## 8. Chuẩn bị cho tuyển dụng
+
+Hãy nghiên cứu các mô tả công việc Junior DevOps Engineer, Cloud Engineer và System Engineer.
+
+Tổng hợp:
+
+- Những kỹ năng xuất hiện thường xuyên trong JD.
+- Công cụ thường được yêu cầu.
+- Kiến thức bắt buộc khi phỏng vấn.
+- Những câu hỏi Linux thường gặp.
+- Những câu hỏi Networking thường gặp.
+- Những câu hỏi Docker và CI/CD.
+- Những câu hỏi AWS.
+- Những bài tập thực hành tuyển dụng có thể gặp.
+
+Phân loại thành:
+
+- Must Have.
+- Should Have.
+- Nice to Have.
+
+Không được nhầm lẫn yêu cầu của vị trí Senior với vị trí Junior.
+
+## 9. Cấu trúc thư mục đầu ra
+
+Tạo một thư mục tên `DEVOPS-LEARNING` trong thư mục hiện tại.
+
+Tổ chức tài liệu như sau:
+
+DEVOPS-LEARNING/
+├── README.md
+├── 00-ROADMAP/
+│   ├── learning-roadmap.md
+│   ├── skill-matrix.md
+│   └── weekly-study-plan.md
+├── 01-LINUX/
+├── 02-NETWORKING/
+├── 03-GIT/
+├── 04-DOCKER/
+├── 05-CICD/
+├── 06-AWS/
+├── 07-TERRAFORM-ANSIBLE/
+├── 08-MONITORING-LOGGING/
+├── 09-KUBERNETES/
+├── 10-SECURITY/
+├── 11-HYBRID-CLOUD-VMWARE/
+├── 12-PRACTICAL-PROJECT/
+├── 13-INTERVIEW-PREPARATION/
+└── 14-RESOURCE-LIBRARY/
+    ├── official-docs.md
+    ├── youtube-channels.md
+    ├── free-courses.md
+    ├── github-labs.md
+    └── reference-links.md
+
+Các file Markdown phải có mục lục, liên kết nội bộ và liên kết đến nguồn gốc.
+
+Tài liệu phải viết bằng tiếng Việt, giữ nguyên thuật ngữ kỹ thuật tiếng Anh cần thiết.
+
+## 10. Nguyên tắc làm việc và kiểm soát chất lượng
+
+Trước tiên, hãy nghiên cứu và lập kế hoạch toàn bộ nội dung.
+
+Không tạo hàng chục file sơ sài chỉ để hoàn thành nhanh.
+
+Hãy làm theo từng bước:
+
+Bước 1: Khảo sát và kiểm chứng nguồn tài liệu.
+
+Bước 2: Xây dựng roadmap và ma trận kỹ năng.
+
+Bước 3: Thiết kế cấu trúc giáo trình.
+
+Bước 4: Biên soạn từng module theo thứ tự học.
+
+Bước 5: Thiết kế bài lab và dự án thực tế.
+
+Bước 6: Kiểm tra liên kết, lệnh, phiên bản công nghệ và tính nhất quán giữa các bài.
+
+Bước 7: Tổng hợp báo cáo những gì đã hoàn thành và những gì còn thiếu.
+
+Nếu có công cụ tìm kiếm Internet, hãy sử dụng để nghiên cứu tài liệu thực tế. Nếu không có, hãy nói rõ giới hạn thay vì giả vờ đã kiểm chứng.
+
+Không tự chạy các lệnh có thể xóa dữ liệu, thay đổi cấu hình hệ thống hoặc tạo tài nguyên Cloud tính phí mà chưa có sự đồng ý của tôi.
+
+Không cài đặt phần mềm hoặc thay đổi môi trường máy tính của tôi nếu chưa được phép.
+
+Nếu nội dung quá lớn, hãy chia thành nhiều giai đoạn và tiếp tục hoàn thiện. Không hy sinh chất lượng để cố hoàn thành tất cả trong một lần.
+
+## 11. Tiêu chuẩn hoàn thành
+
+Bộ giáo trình chỉ được xem là hoàn thành khi:
+
+- Tôi biết phải học gì trước và học gì sau.
+- Mỗi chủ đề có tài liệu học chính và nguồn bổ sung.
+- Có giải thích kiến thức đủ để tự học.
+- Có bài lab thực hành.
+- Có bài tập tự đánh giá.
+- Có dự án xuyên suốt.
+- Có lộ trình 3–6 tháng.
+- Có tài liệu chuẩn bị phỏng vấn.
+- Có nguồn tham khảo đáng tin cậy.
+- Các kiến thức không bị trùng lặp hoặc sắp xếp sai thứ tự.
+
+**Mục tiêu cuối cùng:** Tôi muốn hiểu và làm được công việc của một Junior DevOps / Cloud Engineer, chứ không phải chỉ có một thư mục chứa rất nhiều tài liệu.
+
+Bây giờ hãy bắt đầu bằng Bước 1: khảo sát nguồn tài liệu, đánh giá khoảng trống kiến thức và đề xuất roadmap. Trình bày kế hoạch trước, sau đó mới tiến hành biên soạn từng module.

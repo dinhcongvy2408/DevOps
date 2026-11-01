@@ -1,0 +1,65 @@
+// Bản tham khảo v5 — Grafana Alloy thu log container gửi về Loki.
+// Luồng: discovery.docker → discovery.relabel → loki.source.docker → loki.process → loki.write
+// Xem đồ thị các thành phần: UI Alloy http://localhost:12345 (chỉ bind 127.0.0.1).
+
+// 1. Hỏi Docker API: đang có những container nào?
+discovery.docker "containers" {
+	host             = "unix:///var/run/docker.sock"
+	refresh_interval = "15s"
+}
+
+// 2. Chỉ giữ container của hai project taskhub và taskhub-mon; đặt nhãn ÍT GIÁ TRỊ (low cardinality).
+//    KHÔNG dùng container id, request id, user id làm nhãn — mỗi giá trị mới = một stream mới, Loki chậm dần.
+discovery.relabel "containers" {
+	targets = discovery.docker.containers.targets
+
+	rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+		regex         = "taskhub|taskhub-mon"
+		action        = "keep"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_name"]
+		regex         = "/(.*)"
+		target_label  = "container"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+		target_label  = "compose_service"
+	}
+
+	rule {
+		source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+		target_label  = "compose_project"
+	}
+}
+
+// 3. Đọc stdout/stderr của các container đó qua Docker API.
+loki.source.docker "containers" {
+	host       = "unix:///var/run/docker.sock"
+	targets    = discovery.relabel.containers.output
+	forward_to = [loki.process.json_level.receiver]
+}
+
+// 4. Log của taskhub là JSON (ECS) dạng lồng nhau: {"log":{"level":"INFO",...}, "message":...}.
+//    Lấy log.level làm nhãn level. Dòng không phải JSON (nginx, postgres) vẫn được gửi, chỉ không có nhãn level.
+loki.process "json_level" {
+	forward_to = [loki.write.local.receiver]
+
+	stage.json {
+		expressions = {level = "log.level"} // biểu thức JMESPath: object "log" → trường "level"
+	}
+
+	stage.labels {
+		values = {level = ""} // "" = lấy từ biến cùng tên vừa trích ở stage.json
+	}
+}
+
+// 5. Đẩy về Loki trong network nội bộ.
+loki.write "local" {
+	endpoint {
+		url = "http://loki:3100/loki/api/v1/push"
+	}
+}

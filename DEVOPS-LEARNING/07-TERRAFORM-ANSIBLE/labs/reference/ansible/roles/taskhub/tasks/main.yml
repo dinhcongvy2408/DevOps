@@ -1,0 +1,83 @@
+# Role taskhub — đưa file triển khai từ repo lên /opt/taskhub rồi chạy scripts/deploy.sh.
+# Thay cho bước "git clone + sửa tay" của v2/v3: compose.yaml đổi trong repo → chạy lại playbook là xong.
+# Mật khẩu KHÔNG đi qua Ansible: deploy.sh tự đọc từ Parameter Store bằng instance role.
+
+- name: Tạo thư mục ứng dụng
+  ansible.builtin.file:
+    path: "{{ taskhub_dir }}/{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - ""
+    - scripts
+    - docker/nginx
+
+- name: Copy file triển khai từ repo
+  ansible.builtin.copy:
+    src: "{{ taskhub_repo_root }}/{{ item.path }}"
+    dest: "{{ taskhub_dir }}/{{ item.path }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop: "{{ taskhub_files }}"
+  loop_control:
+    label: "{{ item.path }}"     # in gọn tên file thay vì cả dict
+  register: taskhub_copy
+
+# Tách riêng cấu hình nginx: đổi file này KHÔNG cần chạy lại deploy.sh, chỉ cần restart nginx.
+- name: Cấu hình nginx
+  ansible.builtin.copy:
+    src: "{{ taskhub_repo_root }}/docker/nginx/default.conf"
+    dest: "{{ taskhub_dir }}/docker/nginx/default.conf"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart nginx container
+
+# Hai task "đọc trạng thái" dưới đây không thay đổi gì:
+#  - changed_when: false → không bao giờ báo "changed"
+#  - check_mode: false   → vẫn chạy khi --check (module command mặc định bị bỏ qua ở check mode,
+#                          khi đó biến register không có stdout và điều kiện phía sau sẽ lỗi)
+# ansible-lint (command-instead-of-module) phản đối `sed` vì sed hay bị dùng để SỬA file.
+# Ở đây sed chỉ ĐỌC một giá trị (-n ... p), không ghi gì → bỏ qua quy tắc có lý do.
+- name: Đọc tag đang triển khai (nếu có) # noqa: command-instead-of-module
+  ansible.builtin.command:
+    cmd: sed -n 's/^TASKHUB_IMAGE_TAG=//p' {{ taskhub_dir }}/.env
+  register: taskhub_current_tag
+  changed_when: false
+  failed_when: false            # lần đầu chưa có .env → không coi là lỗi
+  check_mode: false
+
+- name: Kiểm tra container taskhub có đang chạy
+  ansible.builtin.command:
+    cmd: >-
+      docker ps -q
+      --filter label=com.docker.compose.project=taskhub
+      --filter label=com.docker.compose.service=taskhub
+      --filter status=running
+  register: taskhub_running
+  changed_when: false
+  failed_when: false            # --check lần đầu: Docker chưa cài → không coi là lỗi
+  check_mode: false
+
+# Chỉ deploy khi THẬT SỰ cần → lần chạy thứ hai: changed=0.
+# Điều kiện phải ra boolean (ansible-core ≥ 2.19 báo lỗi với điều kiện kiểu chuỗi).
+- name: Triển khai bằng deploy.sh khi file đổi, tag đổi hoặc container không chạy
+  ansible.builtin.command:
+    cmd: "{{ taskhub_dir }}/scripts/deploy.sh {{ taskhub_image_tag }}"
+    chdir: "{{ taskhub_dir }}"
+  environment:
+    AWS_REGION: ap-southeast-1
+  when: >-
+    (taskhub_copy is changed)
+    or ((taskhub_current_tag.stdout | default('') | trim) != taskhub_image_tag)
+    or ((taskhub_running.stdout | default('') | trim | length) == 0)
+  changed_when: true
+  register: taskhub_deploy
+
+- name: In kết quả deploy.sh
+  ansible.builtin.debug:
+    var: taskhub_deploy.stdout_lines
+  when: taskhub_deploy is not skipped   # = deploy.sh đã chạy (task trên luôn changed khi chạy)

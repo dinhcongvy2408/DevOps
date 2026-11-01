@@ -1,0 +1,39 @@
+# taskhub-lite — môi trường "staging" trên laptop.
+# Người viết: đồng nghiệp đã chuyển team. Ghi chú để lại: "chạy được rồi, có vài chỗ hơi chập chờn".
+name: bf04
+
+services:
+  nginx:
+    image: nginx:1.30-alpine
+    ports:
+      - "18000:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/taskhub.conf:ro
+    depends_on:
+      - api
+
+  api:
+    build: ./api
+    environment:
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_NAME: taskhub
+      DB_USER: taskhub
+      DB_PASSWORD: taskhub123
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: taskhub
+      POSTGRES_USER: taskhub
+      POSTGRES_PASSWORD: taskhub123
+    ports:
+      - "5432:5432"
+    volumes:
+      # copy từ hướng dẫn trên mạng
+      - pgdata:/var/lib/postgresql
+
+volumes:
+  pgdata:

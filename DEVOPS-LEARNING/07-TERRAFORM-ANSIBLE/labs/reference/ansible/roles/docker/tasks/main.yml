@@ -1,0 +1,59 @@
+# Role docker — cài Docker Engine + compose plugin từ repo apt CHÍNH THỨC của Docker
+# (cùng nội dung với user-data.sh ở Module 06, nhưng viết bằng module có tính idempotent).
+# Nguồn: docs.docker.com/engine/install/ubuntu (kiểm tra 2026-10-31).
+
+- name: Cài gói phụ thuộc (python3-debian cần cho deb822_repository; curl cần cho aws_ssm)
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - python3-debian
+    state: present
+    update_cache: true
+    cache_valid_time: 3600   # chỉ `apt update` lại nếu cache cũ hơn 1 giờ → lần chạy sau "ok"
+
+# Docker khuyên gỡ docker.io, podman-docker, containerd, runc... của Ubuntu nếu đã cài.
+# AMI Ubuntu 24.04 mới không có các gói này, nên role KHÔNG tự gỡ: gọi apt `state: absent`
+# với tên như "containerd" khi containerd.io đã cài có thể đụng nhầm gói — xem bài 05 mục 11.
+
+- name: Thêm repo apt của Docker (định dạng deb822, khóa ký tải từ Docker)
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: [deb]
+    uris: https://download.docker.com/linux/ubuntu
+    suites: ["{{ ansible_facts['distribution_release'] }}"]   # Ubuntu 24.04 → noble
+    components: [stable]
+    architectures: ["{{ docker_apt_arch[ansible_facts['architecture']] }}"]
+    signed_by: https://download.docker.com/linux/ubuntu/gpg
+  register: docker_repo
+
+# ansible-lint (no-handler) gợi ý đổi thành handler — KHÔNG được: handler chạy ở CUỐI play,
+# còn task cài docker-ce ngay dưới cần cache mới NGAY BÂY GIỜ. Bỏ qua quy tắc có lý do:
+- name: Cập nhật cache apt khi vừa thêm repo
+  ansible.builtin.apt:
+    update_cache: true
+  when: docker_repo is changed # noqa: no-handler
+
+- name: Cài Docker Engine và compose plugin
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: present
+  notify: Restart docker
+
+- name: Docker chạy và tự bật khi khởi động máy
+  ansible.builtin.systemd_service:
+    name: docker
+    state: started
+    enabled: true
+
+# AWS CLI: deploy.sh dùng để đọc mật khẩu từ Parameter Store.
+# Lệnh `snap install` không idempotent → dùng `creates:` để lần sau bỏ qua.
+- name: Cài AWS CLI v2 (snap chính thức)
+  ansible.builtin.command:
+    cmd: snap install aws-cli --classic
+    creates: /snap/bin/aws

@@ -1,0 +1,23 @@
+# Đặt các dòng này vào .gitignore của repo taskhub (thư mục infra/terraform/).
+
+# Thư mục provider/module tải về — tái tạo bằng terraform init
+.terraform/
+
+# State local: chứa ID, IP, ARN của toàn bộ hạ tầng — KHÔNG commit
+*.tfstate
+*.tfstate.*
+
+# Biến của riêng bạn (email, tên). File .example thì commit.
+*.tfvars
+!*.tfvars.example
+
+# File plan nhị phân, log crash, override cục bộ
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# KHÔNG ignore .terraform.lock.hcl — commit nó để mọi máy dùng đúng một phiên bản provider.

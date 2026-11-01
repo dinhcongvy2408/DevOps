@@ -1,0 +1,21 @@
+# BƯỚC 2 của bootstrap — chỉ làm SAU khi `terraform apply` lần đầu (state local) đã tạo xong bucket.
+#
+#   mv backend.tf.example backend.tf
+#   terraform init -migrate-state \
+#     -backend-config="bucket=$(terraform output -raw state_bucket)"
+#
+# Terraform hỏi có chép state local lên S3 không → yes. Kiểm tra:
+#   aws s3 ls "s3://$(terraform output -raw state_bucket)/bootstrap/"
+# rồi mới xóa terraform.tfstate* local.
+#
+# Backend không nhận biến (var.*), nên tên bucket (chứa account id) được truyền lúc init
+# bằng -backend-config — "partial configuration". Repo không chứa account id nào.
+
+terraform {
+  backend "s3" {
+    key          = "bootstrap/terraform.tfstate"
+    region       = "ap-southeast-1"
+    use_lockfile = true
+    encrypt      = true
+  }
+}

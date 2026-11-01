@@ -1,0 +1,20 @@
+# Các phát hiện của `trivy config` đã được XEM XÉT và CHẤP NHẬN có lý do (Trivy 0.76.1, 2026-10-31).
+# Mỗi dòng: mã kiểm tra + hạn xem lại (exp:). Hết hạn → Trivy báo lại → bạn phải quyết định lần nữa.
+# Chạy: trivy config --ignorefile infra/terraform/.trivyignore infra/terraform
+# KHÔNG thêm dòng nào mà không viết lý do ngay phía trên.
+
+# HIGH — Subnet public tự gán public IPv4: đúng thiết kế (1 EC2 ở public subnet, không NAT — ADR-0005).
+AWS-0164 exp:2027-06-30
+
+# CRITICAL — SG cho phép mọi egress: EC2 cần ra Internet (apt, GHCR, endpoint SSM/CloudWatch/S3) và không có NAT
+# hay VPC endpoint để giới hạn đích. Inbound vẫn chỉ TCP 80. Xem lại khi có VPC endpoint hoặc proxy egress.
+AWS-0104 exp:2027-06-30
+
+# HIGH — S3 không dùng customer managed key (KMS): SSE-S3 đã bật cho mọi bucket; CMK tốn ~1 USD/tháng/key
+# và thêm việc quản lý key policy. Chấp nhận ở môi trường học tập.
+AWS-0132 exp:2027-06-30
+
+# HIGH — SNS topic không mã hóa: CloudWatch alarm KHÔNG publish được vào topic mã hóa bằng key AWS managed
+# (alias/aws/sns); muốn mã hóa phải dùng CMK có key policy cho cloudwatch.amazonaws.com (tốn phí). Topic chỉ
+# chứa nội dung cảnh báo, không có dữ liệu nhạy cảm.
+AWS-0095 exp:2027-06-30

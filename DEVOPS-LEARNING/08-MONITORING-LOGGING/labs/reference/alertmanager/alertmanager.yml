@@ -1,0 +1,26 @@
+# Bản tham khảo v5 — Alertmanager trên EC2: gửi Telegram.
+# Kiểm tra: docker run --rm -v "$PWD/monitoring/alertmanager:/a:ro" --entrypoint amtool \
+#             prom/alertmanager:v0.34.2 check-config /a/alertmanager.yml
+#
+# Token bot và chat id KHÔNG nằm trong file này: Alertmanager đọc từ file trong thư mục secret
+# (EC2: Ansible ghi từ Parameter Store /taskhub/dev/telegram-bot-token, quyền chỉ root đọc).
+
+route:
+  receiver: telegram
+  group_by: [alertname, severity]
+  group_wait: 30s        # chờ gom các alert cùng nhóm trước khi gửi lần đầu
+  group_interval: 5m     # alert MỚI trong nhóm đã gửi → gửi lại sau ít nhất 5 phút
+  repeat_interval: 4h    # alert vẫn đang cháy → nhắc lại mỗi 4 giờ
+
+# Đang có TaskhubDown thì đừng gửi thêm HighErrorRate/HighLatency cho cùng instance — ồn và trùng nguyên nhân.
+inhibit_rules:
+  - source_matchers: [alertname="TaskhubDown"]
+    target_matchers: [alertname=~"TaskhubHighErrorRate|TaskhubHighLatencyP95"]
+
+receivers:
+  - name: telegram
+    telegram_configs:
+      - bot_token_file: /etc/monitoring-secrets/telegram_bot_token
+        chat_id_file: /etc/monitoring-secrets/telegram_chat_id
+        send_resolved: true
+        parse_mode: HTML

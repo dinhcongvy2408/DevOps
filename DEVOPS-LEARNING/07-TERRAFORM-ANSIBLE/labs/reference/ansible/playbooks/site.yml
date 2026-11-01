@@ -1,0 +1,26 @@
+# Bản tham khảo cho taskhub v4. Đặt ở: infra/ansible/playbooks/site.yml
+# Chạy (từ infra/ansible/):
+#   export AWS_PROFILE=taskhub
+#   ansible-playbook playbooks/site.yml -e taskhub_image_tag=v0.6.0
+# Chạy thử không thay đổi gì:  thêm --check --diff
+# Chỉ cài Docker:              thêm --tags docker
+
+- name: Cấu hình máy chủ taskhub (Docker + ứng dụng)
+  hosts: env_dev          # nhóm do keyed_groups tạo từ tag Env=dev
+  become: true            # aws_ssm vào máy bằng ssm-user → nâng lên root để cài gói
+  gather_facts: true
+
+  pre_tasks:
+    - name: Bắt buộc có taskhub_image_tag
+      ansible.builtin.assert:
+        that:
+          - taskhub_image_tag is defined
+          - taskhub_image_tag is match('^([0-9a-f]{7}|v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?)$')
+        fail_msg: "Truyền tag image hợp lệ: -e taskhub_image_tag=v0.6.0 (hoặc SHA 7 ký tự)"
+      tags: always
+
+  roles:
+    - role: docker
+      tags: docker
+    - role: taskhub
+      tags: taskhub

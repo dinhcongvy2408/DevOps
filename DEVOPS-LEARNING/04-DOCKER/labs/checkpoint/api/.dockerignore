@@ -1,0 +1,6 @@
+# Không đưa file rác vào image (đã "tối ưu" tuần trước)
+__pycache__/
+**/*.pyc
+.git
+# file lock / cấu hình IDE dạng JSON làm build context nặng
+**/*.json

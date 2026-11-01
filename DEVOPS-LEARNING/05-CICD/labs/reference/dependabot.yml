@@ -1,0 +1,26 @@
+# Bản tham khảo cho dự án taskhub v1. Chép vào: .github/dependabot.yml (KHÔNG nằm trong workflows/)
+# Dependabot tự mở Pull Request khi action, thư viện Maven hoặc base image có phiên bản mới.
+# PR đó phải qua CI như mọi PR khác — bạn đọc release notes rồi mới merge.
+
+version: 2
+updates:
+  # Cập nhật SHA đã ghim trong .github/workflows/*.yml (kèm ghi chú phiên bản phía sau)
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ['*']
+
+  # Thư viện Java trong app/pom.xml
+  - package-ecosystem: maven
+    directory: /app
+    schedule:
+      interval: weekly
+
+  # Base image trong docker/Dockerfile (eclipse-temurin)
+  - package-ecosystem: docker
+    directory: /docker
+    schedule:
+      interval: weekly

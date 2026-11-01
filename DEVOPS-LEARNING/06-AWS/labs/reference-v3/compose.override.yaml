@@ -1,0 +1,13 @@
+# Bản tham khảo — CHỈ dùng trên laptop. Đặt ở gốc repo, cạnh compose.yaml.
+# `docker compose up` (không có -f) tự gộp file này → build image từ code đang sửa.
+# deploy.sh trên EC2 luôn gọi `docker compose -f compose.yaml ...` nên KHÔNG đọc file này.
+#
+# Lưu ý: compose.yaml dùng ${TASKHUB_IMAGE_TAG:?...} và biến được thay TRƯỚC khi gộp file,
+# nên .env trên laptop vẫn phải có một dòng TASKHUB_IMAGE_TAG (giá trị gì cũng được, vd dev).
+
+services:
+  taskhub:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: taskhub:local

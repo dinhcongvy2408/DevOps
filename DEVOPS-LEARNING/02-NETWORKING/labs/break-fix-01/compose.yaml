@@ -1,0 +1,100 @@
+# Break-fix Network #1 — hệ thống "taskhub-edge" mô phỏng
+# Khởi động:  docker compose up -d
+# Dọn dẹp:    docker compose down -v
+#
+# Sơ đồ mạng:
+#   frontend 172.28.1.0/24 : web, client
+#   backend  172.28.5.0/24 : web, api, reports, client
+#   ops      172.28.7.0/24 : status
+
+name: netbf01
+
+networks:
+  frontend:
+    ipam:
+      config:
+        - subnet: 172.28.1.0/24
+  backend:
+    ipam:
+      config:
+        - subnet: 172.28.5.0/24
+  ops:
+    ipam:
+      config:
+        - subnet: 172.28.7.0/24
+
+services:
+  # Reverse proxy — cửa ngõ duy nhất từ bên ngoài vào
+  web:
+    image: nginx:1.30-alpine
+    ports:
+      - "127.0.0.1:18080:80"
+    volumes:
+      - ./web/conf.d:/etc/nginx/conf.d:ro
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - api
+      - reports
+      - status
+
+  # API chính của taskhub
+  api:
+    image: python:3.12-slim
+    command: ["python", "/srv/server.py"]
+    environment:
+      APP_NAME: api
+      BIND_ADDR: "127.0.0.1"
+      APP_PORT: "8000"
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./apps:/srv:ro
+    networks:
+      backend:
+        aliases:
+          - api.internal
+
+  # Dịch vụ báo cáo — có firewall riêng trong container
+  reports:
+    image: python:3.12-slim
+    command: ["sh", "/opt/reports/entrypoint.sh"]
+    cap_add:
+      - NET_ADMIN
+    environment:
+      APP_NAME: reports
+      BIND_ADDR: "0.0.0.0"
+      APP_PORT: "9000"
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./apps:/srv:ro
+      - ./reports:/opt/reports:ro
+    networks:
+      - backend
+
+  # Trang trạng thái nội bộ
+  status:
+    image: python:3.12-slim
+    command: ["python", "/srv/server.py"]
+    environment:
+      APP_NAME: status
+      BIND_ADDR: "0.0.0.0"
+      APP_PORT: "9100"
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ./apps:/srv:ro
+    networks:
+      - ops
+
+  # Jump host của team vận hành — nơi bạn đứng để debug
+  client:
+    image: ubuntu:22.04
+    hostname: jumphost
+    command: ["bash", "/opt/lab/client-init.sh"]
+    volumes:
+      - ./client:/opt/lab:ro
+    extra_hosts:
+      - "api.internal:172.28.5.99"
+    networks:
+      - frontend
+      - backend
